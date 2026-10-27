@@ -1,0 +1,11 @@
+{
+  "name": "figures",
+  "version": "0.1.0",
+  "description": "Expressive, deterministic stick-figure animation in pure SVG",
+  "main": "src/figures.js",
+  "files": ["src", "docs", "examples"],
+  "scripts": { "test": "node tests/smoke.js" },
+  "keywords": ["animation", "stick-figure", "svg", "explainer", "motion"],
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/cherifya/figures" }
+}
