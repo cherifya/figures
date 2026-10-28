@@ -15,7 +15,7 @@
   {
    "type": "bubble",
    "x": 235,
-   "y": 122,
+   "y": 116,
    "t0": 3.2,
    "t1": 4.9,
    "text": "Hi there",
@@ -27,7 +27,7 @@
   {
    "type": "bubble",
    "x": 688,
-   "y": 122,
+   "y": 116,
    "t0": 4.4,
    "t1": 6.0,
    "text": "Oh, hello",
@@ -39,7 +39,7 @@
   {
    "type": "bubble",
    "x": 290,
-   "y": 122,
+   "y": 116,
    "t0": 7.6,
    "t1": 9.4,
    "text": "Knock knock",
@@ -52,16 +52,16 @@
    "type": "heart",
    "x": 450,
    "y": 170,
-   "t0": 6.5,
-   "t1": 7.4,
+   "t0": 6.8,
+   "t1": 7.7,
    "k": [
     {
-     "t": 6.5,
+     "t": 6.8,
      "s": 0.4,
      "y": 190
     },
     {
-     "t": 7.2,
+     "t": 7.5,
      "s": 1.1,
      "y": 150
     }
@@ -113,22 +113,26 @@
      "wiggle": null
     },
     {
-     "t": 6.2,
+     "t": 5.8,
+     "pose": "standing"
+    },
+    {
+     "t": 6.5,
      "x": 398,
      "move": "walk",
      "pose": "standing"
     },
     {
-     "t": 6.6,
+     "t": 6.8,
      "pose": "handshake",
      "expr": "happy"
     },
     {
-     "t": 7.4,
+     "t": 7.7,
      "pose": "standing"
     },
     {
-     "t": 7.8,
+     "t": 8.0,
      "pose": "pointing",
      "expr": "smirk"
     },
@@ -185,18 +189,18 @@
      "wiggle": null
     },
     {
-     "t": 6.2,
+     "t": 6.5,
      "x": 502,
      "move": "walk"
     },
     {
-     "t": 6.6,
+     "t": 6.8,
      "pose": "handshake",
      "expr": "happy",
      "face": -1
     },
     {
-     "t": 7.4,
+     "t": 7.7,
      "pose": "standing"
     },
     {

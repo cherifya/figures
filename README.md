@@ -19,6 +19,22 @@ Most stick-figure animators hold a pose, snap to the next one, and freeze in bet
 - **A hand-made look.** Ink lines boil 12 times a second, limbs curve, figures cast ground shadows, stops kick up dust, and the camera drifts gently.
 - **Deterministic and parallel.** `FIGURES.svg(spec, t)` has no hidden state, so you can split a video into chunks and render them in parallel, and every frame matches a single pass.
 
+## Use it as an agent skill
+
+`skills/figures/` is a self-contained agent skill. It holds `SKILL.md` (the workflow), `references/` (the spec and acting patterns) and `scripts/check_spec.py` (a spec linter). It works with Claude Code, Hermes, Codex and any agent that loads `SKILL.md` folders:
+
+```bash
+git clone https://github.com/cherifya/figures
+cp -r figures/skills/figures ~/.claude/skills/      # Claude Code
+cp -r figures/skills/figures ~/.hermes/skills/      # Hermes
+```
+
+Then ask your agent for something like: *"Animate a 10-second scene where a kid teaches her dad a handshake."* The skill walks it through four steps:
+1. plan the beats;
+2. write the JSON;
+3. lint it with `check_spec.py`;
+4. review the rendered stills, then render the video.
+
 ## Quick start
 
 **Browser**
@@ -83,7 +99,7 @@ Screenshots dominate the cost, which is why chunked parallel rendering pays off.
     {"t": 2.4, "pose": "waving", "wiggle": {"p": 0.4, "a": 6}}]}]}
 ```
 
-The full reference covers 40 poses, 11 expressions, looks, props, effects and keyframing: **[docs/SPEC.md](docs/SPEC.md)**.
+The full reference covers 40 poses, 11 expressions, looks, props, effects and keyframing: **[skills/figures/references/spec.md](skills/figures/references/spec.md)**.
 
 ## Test
 

@@ -177,7 +177,7 @@ function baseAt(K,t){if(t<=K[0].t)return {...K[0]};const last=K[K.length-1];if(t
  let i=0;while(i<K.length-1&&K[i+1].t<=t)i++;const a=K[i],b=K[i+1],u=(t-a.t)/(b.t-a.t),ue=b.move?u:eio(u),s={...a};
  for(const k of ['x','y','s','op','rot','irot','glow']){const va=a[k]??(k==='s'||k==='op'?1:0),vb=b[k]??va;s[k]=lerp(va,vb,ue)}
  s.item=u>.5?b.item:a.item;s.look=a.look;s._a=a;s._b=b;s._u=u;return s}
-function walkPts(kind,ph,dir){const run=kind==='run',L=run?40:26,H=run?16:9,Ab=run?3:1.6,lean=run?.16:.07,bob=Ab*Math.cos(2*TAU*ph);
+function walkPts(kind,ph,dir){const run=kind==='run',L=run?40:26,H=run?14:6.5,Ab=run?3:1.6,lean=run?.16:.07,bob=Ab*Math.cos(2*TAU*ph);
  const neck=[42*Math.sin(lean),-42*Math.cos(lean)],head=[neck[0]+18*Math.sin(lean*1.4),neck[1]-18*Math.cos(lean*1.4)];
  const leg=p=>{p=((p%1)+1)%1;let fx,lift;if(p<.5){fx=L/2-p/.5*L;lift=0}else{const q=(p-.5)/.5;fx=-L/2+L*eio(q);lift=H*Math.sin(Math.PI*q)}const T=[fx,53-bob-lift];return [ik(T,38.1,18.7),T]};
  const sh=shOf(neck),sw=(run?.8:.45)*Math.cos(TAU*ph);
@@ -222,7 +222,7 @@ function drawActor2(ac,t,c,spec,st,all){
  if(s.glow)g+=`<circle cx="0" cy="-30" r="${f1(80+6*Math.sin(t*3))}" fill="url(#glow)" opacity="${f1(s.glow)}"/>`;
  if(look.includes('dress'))g+=`<path d="M 0 -8 L -16 18 L 16 18 Z" fill="${col}" opacity=".9"/>`;
  if(look.includes('robe'))g+=`<path d="M ${f1(p.sh[0])} ${f1(p.sh[1])} L ${f1(-20-lag*.8)} 30 L ${f1(20-lag*.5)} 30 Z" fill="${RED}" opacity=".85" stroke="${col}" stroke-width="2"/>`;
- g+=limb([[0,0],p.ll[0],p.ll[1]],1,.45)+limb([[0,0],p.rl[0],p.rl[1]],2,.45);
+ g+=limb([[0,0],p.ll[0],p.ll[1]],1,.15)+limb([[0,0],p.rl[0],p.rl[1]],2,.15);
  const mid=[p.neck[0]*.5+(p.neck[1]>-30?0:-.6*Math.sin(t)),p.neck[1]*.5];
  g+=`<path d="M 0 0 Q ${f1(mid[0])} ${f1(mid[1])} ${f1(p.neck[0])} ${f1(p.neck[1])}" stroke="${col}" stroke-width="${f1(3.4+.3*hsh(sd+9,fr))}" fill="none" stroke-linecap="round"/>`;
  if(look.includes('tie'))g+=`<g transform="rotate(${f1(-lag*2.6)} ${f1(p.sh[0])} ${f1(p.sh[1])})"><path d="M ${f1(p.sh[0])} ${f1(p.sh[1])} l -3 4 l 3 14 l 3 -14 Z" fill="${RED}"/></g>`;
