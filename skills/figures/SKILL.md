@@ -1,101 +1,107 @@
 ---
 name: figures
-description: Use when animating stick-figure explainer scenes.
-version: 0.1.0
+description: Animate stick-figure scenes from short JSON scripts and render them to SVG, MP4 or GIF. The engine handles walking, gestures, facial expressions, blinking and eye contact on its own. Use when someone asks for an explainer animation, a stick-figure story, a short character clip for a lesson or social post, or wants to turn a dialogue or a cause-and-effect idea into a few seconds of animation.
 license: MIT
+compatibility: Needs Node.js or a browser for the engine. Rendering video or stills needs Python 3, Playwright with Chromium, and ffmpeg.
 metadata:
-  tags: [animation, svg, video, stick-figure, explainer]
-  repo: https://github.com/cherifya/figures
+  version: "0.1.0"
+  repository: "https://github.com/cherifya/figures"
 ---
 
-# figures: stick figures that act
+# figures
 
-Write short JSON scripts and the `figures` engine turns them into expressive stick-figure animation. You get a real skeletal rig, springy motion, planted-feet walks, breathing and blinking, eye contact, blended faces and a hand-drawn ink look. Renders go to SVG, MP4 or GIF.
+You write a scene as JSON: a few characters, where they stand, and what they do at which second. `scripts/figures.js` turns it into SVG for any moment of the scene. `scripts/render.py` captures frames in parallel headless browsers and encodes them to video.
 
-## When to Use
+The engine does the in-between motion by itself. Characters walk with planted feet, breathe, blink, look at whoever is closest, and spring into poses with a small overshoot. A change of expression blends over a fifth of a second. Spend your keyframes on acting beats and leave the fidgeting to the engine.
 
-- Explainer vignettes, lesson clips, story beats or social videos built from simple characters.
-- Animating a short dialogue or a cause-and-effect scene in a few seconds of screen time.
-- Any time you would otherwise draw stick figures by hand or settle for static frames.
-
-Skip it for photoreal or detailed character art. This is a line-drawing engine.
+Paths below are relative to this skill's folder.
 
 ## Setup
 
+The engine has no dependencies. For video and stills:
+
 ```bash
-git clone https://github.com/cherifya/figures && cd figures
-node tests/smoke.js                          # sanity check (Node only)
-pip install playwright && playwright install chromium   # for video/stills
-# plus ffmpeg on PATH
+pip install playwright && playwright install chromium
+# and ffmpeg on PATH (brew install ffmpeg, apt install ffmpeg, ...)
 ```
 
-Install this skill by copying `skills/figures/` into your agent's skills folder, for example:
-- Claude Code: `~/.claude/skills/figures/`
-- Hermes: `~/.hermes/skills/figures/`
+## Making a scene
 
-All paths below are relative to the repo root.
-
-## Workflow
-
-1. **Plan beats first.** Write one line per beat: who does what, then who reacts. Aim for 2 to 4 beats per 10 seconds. Each beat gets one clear gesture plus one reaction 0.2 to 0.4 s later. Hold the final tableau for at least 0.8 s.
-2. **Write the spec.** Start from `examples/hello.json`. Read `skills/figures/references/spec.md` for the full vocabulary.
-   - Keys are sparse; unchanged fields carry forward.
-   - A standing hip sits at `y = ground - 53 * s`.
-   - Put `move: "walk"` or `"run"` on the key where the walk *arrives*.
-3. **Check the spec.**
+1. **Plan the beats before writing JSON.** One line per beat: who does what, and who reacts. Two to four beats fit in ten seconds. Give each beat one clear gesture and let the other character react 0.2 to 0.4 s later. Hold the last pose for at least 0.8 s so the ending lands.
+2. **Write the spec.** Copy `assets/examples/hello.json` and edit it. `references/spec.md` lists every pose, expression, costume, prop and effect. `references/acting.md` has timings for common beats: greetings, handshakes, reveals, arguments, wins and defeats. Some rules that catch everyone:
+   - Keys are sparse. Fields you leave out carry over from the previous key.
+   - A standing character's hip sits at `y = ground - 53 * s`.
+   - `move: "walk"` (or `"run"`) goes on the key where the walk ends, not where it starts.
+3. **Lint it.**
    ```bash
-   python3 skills/figures/scripts/check_spec.py my.json
+   python3 scripts/check_spec.py scene.json
    ```
-   It catches unknown poses, expressions, looks, items and fx; unsorted keys; missing start fields; actors off canvas; bubbles over labels or heads; and actors standing on top of each other. Fix every ERROR. Read the WARNs.
-4. **Render stills and look at them.**
+   It reports:
+   - unknown names;
+   - unsorted keys;
+   - characters floating off the ground or crowding each other;
+   - walks too fast for the legs;
+   - waves that never stop;
+   - speech bubbles covering a head or a name label.
+
+   Fix every ERROR. WARNs are judgment calls.
+4. **Look at stills before rendering video.**
    ```bash
-   python3 tools/render.py my.json qa/ --stills 1.0 2.5 4.0 ...
+   python3 scripts/render.py scene.json qa/ --stills 1.0 2.5 4.0
    ```
-   Pick one still per beat, mid-gesture. With a vision-capable agent, open each PNG. Check that the faces read correctly, that bubbles and labels don't collide, that nothing is cropped at the edges and that the legs look right mid-walk.
-5. **Preview live (optional).** Run `python3 -m http.server` (as a background process) and open `/tools/player.html`. It has scrub, 0.25× speed and Load JSON.
-6. **Render.**
+   Take one still per beat, mid-gesture. If you can view images, open them and check:
+   - the faces read the way you meant;
+   - bubbles clear the labels;
+   - nothing is cut off at the edges;
+   - legs look right mid-stride.
+5. **Render.**
    ```bash
-   python3 tools/render.py my.json out.mp4 --workers 4
-   python3 tools/render.py my.json out.gif --size 1350x600
+   python3 scripts/render.py scene.json out.mp4 --workers 4
+   python3 scripts/render.py scene.json out.gif --size 1350x600
    ```
-   Each worker is a headless browser rendering its own chunk of frames. About 4 workers is the sweet spot on a laptop.
+   Each worker is a headless browser that renders its own slice of frames. The slices join seamlessly because every frame depends only on the scene and the time. Four workers is about right for a laptop. More than that tends to slow down once the machine gets hot.
 
-## Using the engine directly
+## Using the engine in code
 
-- `FIGURES.svg(spec, t)` returns an SVG string for time `t` in seconds. Use it as a browser global (`<script src="src/figures.js">`) or in Node (`require('./src/figures.js')`).
-- `FIGURES.POSES` and `FIGURES.EXPRESSIONS` list the vocabulary.
-- Every frame is a pure function of `(spec, t)`. You can render any frame in any order, split a video into chunks across machines, or seek a player instantly, and you get identical output each time.
+```html
+<script src="scripts/figures.js"></script>
+<script>stage.innerHTML = FIGURES.svg(spec, 2.5)</script>   <!-- the scene at t = 2.5 s -->
+```
 
-## What the engine does for you (don't script it)
+In Node: `const FIGURES = require('./scripts/figures.js')`. `FIGURES.POSES` and `FIGURES.EXPRESSIONS` list the vocabulary.
 
-- **Motion:**
-  - pose changes spring in with slight overshoot; big arm moves wind up first and squash and stretch;
-  - walk and run cycles are driven by distance, so feet never skate; the body bobs, the arms swing and a dust puff marks the stop;
-  - turnarounds animate when `face` flips.
-- **Idle life:** breathing, sway, blinks, gaze toward the nearest character and a small head tilt.
-- **Follow-through:** hair, hats, ties and robes lag behind motion.
-- **Faces:** expressions blend over 0.22 s. Emotion marks appear on their own:
-  - `surprised`: shock lines;
-  - `angry`: an anger mark;
-  - `worried` or `cold`: a sweat drop;
-  - `laughing`: laugh lines and a bounce.
-- **Feel:** `cheer` combined with `happy` or `laughing` makes the figure hop. Figures cast ground shadows, ink lines boil 12 times a second, and the camera drifts gently.
+If you change the engine, keep every frame a pure function of `(spec, t)`. Use the seeded noise helpers (`hsh`, `nz`) and never `Math.random()` or state carried between calls. Otherwise parallel renders will flicker where the slices meet.
 
-So don't add manual blink or fidget keys, bounce keyframes for walking, or extra sweat-drop fx. Spend your keys on acting beats instead.
+## Things the engine already does
 
-## Pitfalls
+Don't animate these by hand:
+- Pose changes spring in. Big arm moves wind up first and squash a little on landing.
+- Walk and run cycles follow the distance covered, so feet never slide. The body bobs, arms swing, and a puff of dust marks the stop.
+- Flipping `face` plays a turn rather than an instant mirror.
+- Idle characters breathe, sway, blink and tilt their heads. Their eyes track the nearest character.
+- Hair, hats, ties and robes trail behind fast moves.
+- Expressions add their own marks:
+  - shock lines for `surprised`;
+  - a throbbing anger mark for `angry`;
+  - a sweat drop for `worried` or `cold`;
+  - laugh lines and a chuckle bounce for `laughing`.
+- `cheer` with `happy` or `laughing` makes the character hop, and the shadow shrinks as the figure leaves the ground.
 
-- **Bubbles.** Put them beside and above the speaker's head (y about 122 for `s` 1.3 on a 400-high canvas), never over the label band. `tail: -1` points down-left, `1` down-right.
-- **Spacing.** A handshake needs partners about 100 px apart, hip to hip. Anything else needs at least 110 px, or limbs tangle.
-- **Seated poses** (`sitting`, `sit_*`) keep seated legs. To stand up, change `y` back to the standing hip in the same key.
-- **Waving.** `wiggle: {p, a}` waves the right forearm until a later key sets `wiggle: null`. Without the null it waves forever.
-- **Turning.** `face` flips are animated. Don't flip it on the same key as a long walk, or the figure moonwalks for 0.2 s.
-- **Edges.** Keep important props more than 40 px from the canvas edges; the camera drift zooms in slightly.
-- **Determinism.** If you extend the engine, keep frames a pure function of `t`. Use seeded noise (`hsh`, `nz`) and closed-form springs, never `Math.random()` or state carried between calls. Otherwise parallel renders won't match.
-- **ffmpeg filters.** Durations need a leading zero (`d=0.3`), and reusing one audio input in two `atrim`s needs `asplit`.
+## Common mistakes
+
+- **Bubbles.** On a 400-high canvas with `s` 1.3, put speech bubbles beside and above the speaker's head, around y 116 to 122, and away from the name label. `tail: -1` points down and left; `1` points down and right.
+- **Distance between characters.** Two people shaking hands stand about 100 px apart (hip to hip). Anyone else needs at least 110 px, or their arms tangle.
+- **Seated poses.** `sitting` and `sit_*` keep seated legs. When a character stands up, change `y` back to the standing hip on the same key.
+- **Waving.** `wiggle: {p, a}` keeps the right forearm waving until a later key sets `wiggle: null`. Forget the null and the character waves for the rest of the scene.
+- **Turning while walking.** Flipping `face` on the key that ends a long walk makes the character moonwalk for a moment. Turn on the key before.
+- **Edges.** Keep important props 40 px or more from the edges, because the camera drifts in slightly.
+- **ffmpeg filters** (if you add audio): write durations with a leading zero (`d=0.3`), and use `asplit` before trimming one audio input twice.
 
 ## Files
 
-- `references/spec.md`: the full spec reference (poses, expressions, looks, items, fx, keyframing).
-- `references/acting.md`: beat patterns that read well: entrance, greeting, reveal, argument, triumph, defeat.
-- `scripts/check_spec.py`: a static linter for specs. Standard library only; run with `--strict` to fail on warnings.
+- `scripts/figures.js`: the engine.
+- `scripts/render.py`, `scripts/frame.html`: the parallel renderer and the page it drives.
+- `scripts/check_spec.py`: the spec linter (Python standard library only). `--strict` also fails on warnings.
+- `references/spec.md`: the scene format in full.
+- `references/acting.md`: beat timings that read well.
+- `assets/examples/`: `hello.json` (two people meet), `mirror.json` and `court.json` (scenes from a series on power and history).

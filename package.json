@@ -4,7 +4,7 @@
   "description": "Expressive, deterministic stick-figure animation in pure SVG",
   "main": "src/figures.js",
   "files": ["src", "skills", "examples", "tools"],
-  "scripts": { "test": "node tests/smoke.js && python3 skills/figures/scripts/check_spec.py examples/*.json" },
+  "scripts": { "test": "python3 tools/sync_skill.py --check && node tests/smoke.js && python3 skills/figures/scripts/check_spec.py examples/*.json" },
   "keywords": ["animation", "stick-figure", "svg", "explainer", "motion"],
   "license": "MIT",
   "repository": { "type": "git", "url": "https://github.com/cherifya/figures" }

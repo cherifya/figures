@@ -113,9 +113,9 @@ def check(path, strict=False):
                     v = abs(b["x"] - xa) / max(1e-6, b["t"] - a["t"])
                     stride = (80 if b["move"] == "run" else 52) * s
                     cad = v / stride
-                    lim = 3.2 if b["move"] == "run" else 2.6
+                    lim = 3.8 if b["move"] == "run" else 2.6
                     if cad > lim:
-                        Wn(f"{nm} t={b['t']}: {b['move']} cadence {cad:.1f} stride cycles/s looks frantic (≤{lim}); give it more time or use run")
+                        Wn(f"{nm} t={b['t']}: {b['move']} cadence {cad:.1f} stride cycles/s looks frantic (≤{lim}); give it more time" + (" or use run" if b["move"] == "walk" else ""))
         res.append((nm, ac, states, s))
     # staging checks sampled over time
     bubbles = [f for f in spec.get("fx", []) if f.get("type") in ("bubble", "thought")]

@@ -1,0 +1,9 @@
+<!doctype html>
+<!-- Headless frame page used by render.py, which injects figures.js. Open tools/player.html for a live preview. -->
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#16110c;overflow:hidden}#v{position:absolute}</style></head>
+<body><div id="v"></div><script>
+let SPEC,ST=0;
+function init(spec,W,H){SPEC=spec;ST=spec.start||0;const w=spec.w||900,h=spec.h||400,s=Math.min(W/w,H/h),v=document.getElementById('v');
+ v.style.width=w*s+'px';v.style.height=h*s+'px';v.style.left=(W-w*s)/2+'px';v.style.top=(H-h*s)/2+'px';window.READY=true}
+function render(t){document.getElementById('v').innerHTML=FIGURES.svg(SPEC,ST+t)}
+</script></body></html>

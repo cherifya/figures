@@ -5,8 +5,9 @@ Every frame is a pure function of time, so the frame range is split into K chunk
 then encoded in one ffmpeg pass (Apple VideoToolbox when available, else libx264).
 
 usage:
-  python3 tools/render.py examples/hello.json out.mp4 [--workers 4] [--fps 30] [--size 1920x1080] [--gif]
-  python3 tools/render.py examples/hello.json stills/ --stills 1.0 2.5 4.0     # PNG stills for QA
+  python3 render.py scene.json out.mp4 [--workers 4] [--fps 30] [--size 1920x1080]
+  python3 render.py scene.json out.gif [--size 1350x600]
+  python3 render.py scene.json stills/ --stills 1.0 2.5 4.0     # PNG stills for review
 
 needs: pip install playwright && playwright install chromium; ffmpeg on PATH.
 """
@@ -17,10 +18,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PAGE = 'file://' + os.path.join(HERE, 'frame.html')
 
 
+def _engine():
+    """$FIGURES_JS if set, else figures.js next to this script (installed skill), else ../src/figures.js (repo checkout)."""
+    for c in (os.environ.get('FIGURES_JS'), os.path.join(HERE, 'figures.js'), os.path.join(HERE, '..', 'src', 'figures.js')):
+        if c and os.path.exists(c):
+            return os.path.abspath(c)
+    sys.exit('figures.js not found: set FIGURES_JS=/path/to/figures.js')
+
+
 def _open(p, spec, W, H):
     b = p.chromium.launch(args=['--allow-file-access-from-files'])
     pg = b.new_page(viewport={'width': W, 'height': H})
     pg.goto(PAGE)
+    pg.add_script_tag(path=_engine())
     pg.evaluate('([s,w,h])=>init(s,w,h)', [spec, W, H])
     pg.wait_for_function('window.READY===true')
     return b, pg

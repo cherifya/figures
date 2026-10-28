@@ -1,43 +1,55 @@
 # figures
 
-**Stick figures that act.** A tiny, dependency-free SVG engine for expressive explainer animations. Each scene is a short JSON script, and each frame is a pure function of time.
+Stick-figure animation from short JSON scripts. You say who stands where and what each character does at which second, and figures animates everything in between: the walking, the gestures, the blinking, the eye contact, and faces that change with the mood. The engine is a single JavaScript file with no dependencies. It draws SVG in the browser, and a small Python tool renders scenes to MP4 or GIF.
 
-![hello](media/hello.gif)
+![Two stick figures meet, wave, shake hands and laugh at a bad joke](media/hello.gif)
 
-Same script, two engines. Left: the original [stix](https://github.com/bassimeledath/stix)-style renderer. Right: `figures`.
+## Before and after
 
-[![side by side](media/side_by_side.jpg)](media/side_by_side.mp4)
+This clip plays the same script through two engines. On the left is [stix](https://github.com/bassimeledath/stix), which figures grew out of. On the right is figures. The clip is 21 seconds, with no sound.
 
-## Why figures
+[![The same Law 1 scene rendered by stix and by figures](media/side_by_side.jpg)](media/side_by_side.mp4)
 
-Most stick-figure animators hold a pose, snap to the next one, and freeze in between. `figures` keeps the simple JSON scripting but animates like a cartoonist would:
+## How it animates
 
-- **A real rig.** Bones rotate around joints, so limbs keep their length and hands travel on arcs. Two-bone IK, and walk and run cycles driven by distance, keep feet planted with no skating. The body bobs and the arms swing.
-- **The principles of animation, built in.** Transitions are springs with overshoot and settle. Big gestures get anticipation and squash and stretch. Hair, hats, ties, robes and props trail the motion. Turnarounds animate.
-- **Characters who are alive.** They breathe, sway and blink, and their eyes find whoever is nearby.
-- **Faces that act.** Brows, eyes and mouths blend between 11 expressions. Emotion marks appear on their own: shock lines, an anger mark, sweat drops, laugh lines.
-- **A hand-made look.** Ink lines boil 12 times a second, limbs curve, figures cast ground shadows, stops kick up dust, and the camera drifts gently.
-- **Deterministic and parallel.** `FIGURES.svg(spec, t)` has no hidden state, so you can split a video into chunks and render them in parallel, and every frame matches a single pass.
+stix moves a character by sliding each joint in a straight line from one pose to the next, so arms shrink halfway through a gesture and feet skate across the floor. figures gives every character a skeleton instead.
+- Bones rotate around their joints, so limbs keep their length and hands travel along arcs.
+- A walk or run takes steps sized to the distance covered, so the feet stay planted. The body bobs while the arms swing.
 
-## Use it as an agent skill
+Pose changes run on a spring, so a pointing arm overshoots a little and settles. Large gestures wind up before they go. Hair, hats, ties and robes trail behind fast moves, and turning around plays as a turn rather than a mirror flip.
 
-`skills/figures/` is a self-contained agent skill. It holds `SKILL.md` (the workflow), `references/` (the spec and acting patterns) and `scripts/check_spec.py` (a spec linter). It works with Claude Code, Hermes, Codex and any agent that loads `SKILL.md` folders:
+Nobody freezes between keyframes. Characters breathe, sway, blink at uneven intervals and look at whoever is closest. Each face is a set of brows, eyes and a mouth that blend between 11 expressions. Some expressions bring their own marks: shock lines for surprise, a throbbing mark for anger, a sweat drop for worry.
+
+The ink lines are redrawn with a slight wobble 12 times a second, as in hand-drawn animation. Each figure also casts a soft shadow that shrinks when it jumps.
+
+## Install as an agent skill
+
+`skills/figures` is an [Agent Skill](https://agentskills.io). It contains:
+- the engine and the renderer;
+- a linter for scene files;
+- the full scene reference and timing notes for common beats;
+- example scenes.
+
+Install it with the [skills CLI](https://github.com/vercel-labs/skills):
 
 ```bash
-git clone https://github.com/cherifya/figures
-cp -r figures/skills/figures ~/.claude/skills/      # Claude Code
-cp -r figures/skills/figures ~/.hermes/skills/      # Hermes
+npx skills add cherifya/figures                    # current project
+npx skills add cherifya/figures -g                 # every project
+npx skills add cherifya/figures -a claude-code     # one agent only
 ```
 
-Then ask your agent for something like: *"Animate a 10-second scene where a kid teaches her dad a handshake."* The skill walks it through four steps:
+Then describe the scene you want, for example "animate a 10 second scene where a kid teaches her dad a secret handshake." The skill has the agent:
 1. plan the beats;
 2. write the JSON;
-3. lint it with `check_spec.py`;
-4. review the rendered stills, then render the video.
+3. lint it;
+4. check stills from the key moments;
+5. render the video.
 
-## Quick start
+If the CLI doesn't support your agent, copy `skills/figures/` into the agent's skills folder.
 
-**Browser**
+## Use it in code
+
+In a page:
 
 ```html
 <div id="stage" style="width:900px;height:400px"></div>
@@ -53,45 +65,36 @@ Then ask your agent for something like: *"Animate a 10-second scene where a kid 
 </script>
 ```
 
-**Player** (scrub, slow down, load your own JSON):
-
-```bash
-python3 -m http.server   # then open http://localhost:8000/tools/player.html
-```
-
-**Node**
+In Node:
 
 ```js
 const FIGURES = require('./src/figures.js');
-const svg = FIGURES.svg(require('./examples/hello.json'), 2.5); // SVG string for t = 2.5 s
+const svg = FIGURES.svg(require('./examples/hello.json'), 2.5); // the scene at 2.5 seconds
 ```
 
-## Render to video
+To scrub through a scene, slow it down or load your own file, serve the repo with `python3 -m http.server` and open `http://localhost:8000/tools/player.html`.
+
+## Render video
 
 ```bash
-pip install playwright && playwright install chromium   # plus ffmpeg on PATH
+pip install playwright && playwright install chromium   # ffmpeg also needs to be on PATH
 python3 tools/render.py examples/hello.json hello.mp4 --workers 4
 python3 tools/render.py examples/hello.json hello.gif --size 1350x600
-python3 tools/render.py examples/hello.json qa/ --stills 1.5 4.0 6.7   # PNG stills for review
+python3 tools/render.py examples/hello.json qa/ --stills 1.5 4.0 6.7
 ```
 
-The renderer splits the frame range across `--workers` headless browsers, then encodes once. It uses Apple VideoToolbox when available, otherwise libx264.
+The renderer splits the frames across several headless browsers and encodes the result once. It uses Apple VideoToolbox when the machine has it and libx264 otherwise. A frame depends only on the scene and the time, so the slices join exactly.
 
-Measured on a MacBook Air (M5) at 1920×1080:
-
-| | frames/s |
-|---|---|
-| Building one frame's SVG | 0.05–0.3 ms (not the bottleneck) |
-| 1 browser | about 29 |
-| 4 browsers in parallel | about 82–97 |
-
-Screenshots dominate the cost, which is why chunked parallel rendering pays off.
+On a MacBook Air (M5) at 1920×1080:
+- One browser captures about 29 frames per second.
+- Four browsers together capture 82 to 97.
+- Building the SVG for a frame takes well under a millisecond, so almost all the time goes to screenshots.
 
 ## Writing scenes
 
 ```json
 {"w": 900, "h": 400, "ground": 355, "duration": 6,
- "fx": [{"type": "bubble", "x": 240, "y": 122, "t0": 2.2, "t1": 4, "text": "Hi there", "tail": -1}],
+ "fx": [{"type": "bubble", "x": 240, "y": 120, "t0": 2.2, "t1": 4, "text": "Hi there", "tail": -1}],
  "actors": [
   {"label": "ADA", "s": 1.3, "keys": [
     {"t": 0, "x": -80, "y": 286, "pose": "standing", "expr": "neutral"},
@@ -99,17 +102,26 @@ Screenshots dominate the cost, which is why chunked parallel rendering pays off.
     {"t": 2.4, "pose": "waving", "wiggle": {"p": 0.4, "a": 6}}]}]}
 ```
 
-The full reference covers 40 poses, 11 expressions, looks, props, effects and keyframing: **[skills/figures/references/spec.md](skills/figures/references/spec.md)**.
+Ada walks in from the left, smiles and waves while her speech bubble is up.
 
-## Test
+Fields you leave out of a key carry over from the one before.
+- [The scene reference](skills/figures/references/spec.md) lists the 40 poses, 11 expressions, costumes, props and effects.
+- [acting.md](skills/figures/references/acting.md) gives timings for greetings, reveals, arguments and other common beats.
+
+Before rendering, run `python3 skills/figures/scripts/check_spec.py scene.json`. It catches typos in pose names, characters floating off the ground, and speech bubbles that cover someone's name.
+
+## Development
 
 ```bash
-node tests/smoke.js    # renders every frame of every example; fails on NaN or undefined
+npm test                      # renders every frame of the examples and lints them
+python3 tools/sync_skill.py   # run after editing src/, tools/ or examples/
 ```
+
+The skill folder carries its own copy of the engine, renderer and examples, so `npx skills add` works without the rest of the repo. The test fails if those copies fall out of date.
 
 ## Credits
 
-The pose library, props and effects are derived from [stix](https://github.com/bassimeledath/stix) by Bassime Ledath (MIT). The rig, motion system, faces and renderer are new in `figures`. The `mirror` and `court` examples come from a stick-figure explainer series on power and history.
+figures started as a rewrite of [stix](https://github.com/bassimeledath/stix) by Bassime Ledath (MIT) and keeps its pose library, props and effects. The skeleton, motion, faces and parallel renderer are new. The mirror and court examples come from a stick-figure series about power and history.
 
 ## License
 
